@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>ShoppingCart.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">shopping-cart-tests</a> &gt; <a href="../index.html" class="el_bundle">shopping-cart-model</a> &gt; <a href="index.source.html" class="el_package">default</a> &gt; <span class="el_source">ShoppingCart.java</span></div><h1>ShoppingCart.java</h1><pre class="source lang-java linenums">
+import discount.IOffer;
+import dto.Product;
+
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="fc" id="L8">public class ShoppingCart {</span>
+<span class="fc" id="L9">    List&lt;Product&gt; productList = new ArrayList&lt;&gt;();</span>
+    private double totalCartValue;
+    private IOffer offer;
+
+    public int getProductCount() {
+<span class="fc" id="L14">        return productList.size();</span>
+    }
+
+    public double totalCartValue()
+    {
+
+<span class="fc bfc" id="L20" title="All 2 branches covered.">        if(productList.size()&gt;0){</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">            for(Product product : productList){</span>
+<span class="fc" id="L22">                totalCartValue += product.getTotalPrice();</span>
+<span class="fc" id="L23">            }</span>
+<span class="fc" id="L24">            return totalCartValue;</span>
+        }
+<span class="fc" id="L26">        return 0;</span>
+    }
+
+    public void addProduct(Product product){
+<span class="fc bfc" id="L30" title="All 6 branches covered.">      if(product.getQuantity()&gt;0 &amp;&amp; product.getProductName()!=null &amp;&amp; !product.getProductName().isEmpty())</span>
+      {
+<span class="fc bfc" id="L32" title="All 2 branches covered.">          if(offer!=null){</span>
+<span class="fc" id="L33">              offer.applyOffer(product);</span>
+          }
+<span class="fc" id="L35">          productList.add(product);</span>
+      }
+      else
+      {
+<span class="fc" id="L39">          throw new IllegalArgumentException(&quot;Empty Product&quot;);</span>
+      }
+<span class="fc" id="L41">    }</span>
+
+    public Product getProductByName(String name) {
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        for (Product product : productList) {</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">            if (product.getProductName().equals(name)) {</span>
+<span class="fc" id="L46">                return product;</span>
+            }
+<span class="fc" id="L48">        }</span>
+<span class="fc" id="L49">        throw new IllegalArgumentException(&quot;Product not found!&quot;);</span>
+    }
+
+
+    public void setOffer(IOffer offer) {
+<span class="fc" id="L54">        this.offer = offer;</span>
+<span class="fc" id="L55">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
