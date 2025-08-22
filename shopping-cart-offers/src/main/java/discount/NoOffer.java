@@ -1,10 +1,9 @@
-package org.example.discount;
+package discount;
 
-import org.example.Product;
+import dto.Product;
 
 public class NoOffer implements IOffer {
     @Override
     public void applyOffer(Product product) {
-
     }
 }
