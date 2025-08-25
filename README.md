@@ -1,5 +1,10 @@
 # JUnit-Product
 
+Class **App**
+
+Main class which has db connection logic.
+
+
 Class **Product**
 Fields:
 
