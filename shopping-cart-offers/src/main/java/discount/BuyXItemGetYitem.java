@@ -1,6 +1,7 @@
 package discount;
 
-import dto.Product;
+import domain.discount.IOffer;
+import domain.dto.Product;
 
 public class BuyXItemGetYitem implements IOffer {
     private final int paidItemsCount;

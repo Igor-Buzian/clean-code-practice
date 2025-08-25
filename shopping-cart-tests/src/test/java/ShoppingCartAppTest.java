@@ -1,9 +1,12 @@
 import cart.ShoppingCart;
 import discount.BuyXItemGetYitem;
 import discount.DiscountOnNextItemOffer;
-import discount.IOffer;
+import domain.discount.IOffer;
 import discount.NoOffer;
-import dto.Product;
+import infrastructure.DatabaseConnectionManager;
+import infrastructure.PostgresProductRepository;
+import interfaces.ProductRepository;
+import domain.dto.Product;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -16,11 +19,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 public class ShoppingCartAppTest {
 
@@ -30,15 +33,18 @@ public class ShoppingCartAppTest {
     private static final String APPLE_NAME = "Apple";
     private static final double DELTA = 0.0;
 
+    DatabaseConnectionManager connectionManager = new DatabaseConnectionManager("jdbc:postgresql://localhost:5432/clean_code", "postgres", "postgres");
+    private final ProductRepository productRepository = new PostgresProductRepository(connectionManager);
+
     @Test
     public void shouldCreateEmptyShoppingCart() {
-        ShoppingCart shoppingCart = new ShoppingCart();
+        ShoppingCart shoppingCart = new ShoppingCart(productRepository);
         assertEquals(0, shoppingCart.getProductCount());
     }
 
     @Test
     public void shouldAddSingleProduct() {
-        ShoppingCart shoppingCart = new ShoppingCart();
+        ShoppingCart shoppingCart = new ShoppingCart(productRepository);
         Product product = new Product(AVOCADO_NAME, 1, 52.1);
         shoppingCart.addProduct(product);
 
@@ -48,7 +54,7 @@ public class ShoppingCartAppTest {
 
     @Test
     public void shouldAddMultipleProducts() {
-        ShoppingCart shoppingCart = new ShoppingCart();
+        ShoppingCart shoppingCart = new ShoppingCart(productRepository);
         shoppingCart.addProduct(new Product(GATSBY_CREAM_NAME, 1, 30));
         shoppingCart.addProduct(new Product(BVLGIRI_SOAP_NAME, 1, 100));
 
@@ -59,7 +65,7 @@ public class ShoppingCartAppTest {
     @Test
     public void shouldApplyBuyXGetYOfferToCart() {
         IOffer offer = new BuyXItemGetYitem(2, 1);
-        ShoppingCart shoppingCart = new ShoppingCart();
+        ShoppingCart shoppingCart = new ShoppingCart(productRepository);
         Product product = new Product(GATSBY_CREAM_NAME, 5, 150.0);
         shoppingCart.setOffer(offer);
         shoppingCart.addProduct(product);
@@ -70,7 +76,7 @@ public class ShoppingCartAppTest {
 
     @Test
     public void shouldApplyBuyXGetYOfferToDifferentProducts() {
-        ShoppingCart cart = new ShoppingCart();
+        ShoppingCart cart = new ShoppingCart(productRepository);
         cart.setOffer(new BuyXItemGetYitem(2, 1));
         cart.addProduct(new Product(GATSBY_CREAM_NAME, 3, 90.0));
         cart.setOffer(new NoOffer());
@@ -83,7 +89,7 @@ public class ShoppingCartAppTest {
     @Test
     public void shouldApplyFiftyPercentDiscountToNextItem() {
         IOffer offer = new DiscountOnNextItemOffer(50);
-        ShoppingCart cart = new ShoppingCart();
+        ShoppingCart cart = new ShoppingCart(productRepository);
         cart.setOffer(offer);
         Product product = new Product(GATSBY_CREAM_NAME, 2, 60.0);
         cart.addProduct(product);
@@ -96,7 +102,7 @@ public class ShoppingCartAppTest {
     @Test
     public void shouldApplyFiftyPercentDiscountToMultipleProducts() {
         IOffer offer = new DiscountOnNextItemOffer(50);
-        ShoppingCart cart = new ShoppingCart();
+        ShoppingCart cart = new ShoppingCart(productRepository);
         cart.setOffer(offer);
         Product product = new Product(GATSBY_CREAM_NAME, 5, 150);
         cart.addProduct(product);
@@ -108,7 +114,7 @@ public class ShoppingCartAppTest {
 
     @Test
     public void shouldThrowExceptionWhenProductQuantityIsZero() {
-        ShoppingCart cart = new ShoppingCart();
+        ShoppingCart cart = new ShoppingCart(productRepository);
         Product product = new Product(GATSBY_CREAM_NAME, 0, 150.0);
         assertThrowsExactly(IllegalArgumentException.class,
                 () -> cart.addProduct(product),
@@ -117,7 +123,7 @@ public class ShoppingCartAppTest {
 
     @Test
     public void shouldThrowExceptionWhenProductNameIsNull() {
-        ShoppingCart cart = new ShoppingCart();
+        ShoppingCart cart = new ShoppingCart(productRepository);
         Product product = new Product(null, 2, 150.0);
         assertThrowsExactly(IllegalArgumentException.class,
                 () -> cart.addProduct(product),
@@ -126,7 +132,7 @@ public class ShoppingCartAppTest {
 
     @Test
     public void shouldThrowExceptionWhenProductNameIsEmpty() {
-        ShoppingCart cart = new ShoppingCart();
+        ShoppingCart cart = new ShoppingCart(productRepository);
         Product product = new Product("", 2, 150.0);
         assertThrowsExactly(IllegalArgumentException.class,
                 () -> cart.addProduct(product),
@@ -135,14 +141,14 @@ public class ShoppingCartAppTest {
 
     @Test
     public void shouldNotFindProductByName() {
-        ShoppingCart cart = new ShoppingCart();
+        ShoppingCart cart = new ShoppingCart(productRepository);
         cart.addProduct(new Product("ff", 2, 150.0));
         assertTrue(cart.getProductByName("gg").isEmpty());
     }
 
     @Test
     public void shouldHandleZeroCartValue() {
-        ShoppingCart cart = new ShoppingCart();
+        ShoppingCart cart = new ShoppingCart(productRepository);
         assertEquals(0, cart.totalCartValue());
     }
 
@@ -166,8 +172,9 @@ public class ShoppingCartAppTest {
 
     @Test
     void shouldVerifyOfferIsCalled() {
-        IOffer mockitoOffer = Mockito.mock(IOffer.class);
-        ShoppingCart cart = new ShoppingCart();
+        IOffer mockitoOffer = mock(IOffer.class);
+        ProductRepository mockRepository = mock(ProductRepository.class);
+        ShoppingCart cart = new ShoppingCart(mockRepository);
         Product apple = new Product(APPLE_NAME, 2, 30);
         cart.setOffer(mockitoOffer);
         cart.addProduct(apple);
@@ -176,7 +183,8 @@ public class ShoppingCartAppTest {
 
     @Test
     public void shouldVerifyProductIsAdded() {
-        ShoppingCart cart = new ShoppingCart();
+        ProductRepository mockRepository = mock(ProductRepository.class);
+        ShoppingCart cart = new ShoppingCart(mockRepository);
         ShoppingCart mockedCart = Mockito.spy(cart);
 
         Product mango = new Product("Mango", 3, 120);
@@ -190,7 +198,7 @@ public class ShoppingCartAppTest {
     @ParameterizedTest
     @MethodSource("provideCartData")
     void shouldCalculateTotalValueCorrectlyWithOffers(CartTestData data) {
-        ShoppingCart cart = new ShoppingCart();
+        ShoppingCart cart = new ShoppingCart(productRepository);
         for (int i = 0; i < data.products.length; i++) {
             cart.setOffer(data.offers[i]);
             cart.addProduct(data.products[i]);
